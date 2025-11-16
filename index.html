@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>탐구 질문 확장 도구</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter 폰트 설정 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+        /* 모델의 응답(번호 목록)을 더 잘 표시하기 위한 스타일 */
+        #questionOutput {
+            white-space: pre-wrap; /* 줄바꿈 유지 */
+            text-align: left; /* 텍스트 왼쪽 정렬 */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <!-- 커스텀 알림 메시지 박스를 위한 DOM 요소 -->
+    <div id="messageBox" class="fixed top-5 right-5 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none z-50"></div>
+
+    <div class="w-full max-w-lg bg-white p-6 md:p-10 rounded-2xl shadow-xl transition-all duration-300">
+        <!-- 제목 및 설명 -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-blue-700 mb-2">
+                탐구 질문 확장 도구
+            </h1>
+            <p class="text-gray-600 text-md">
+                간단한 문장을 심층적인 연구와 토론을 위한 질문으로 확장해 보세요.
+            </p>
+        </header>
+
+        <!-- 입력 영역 -->
+        <section class="space-y-6">
+            <label for="sentenceInput" class="block text-lg font-medium text-gray-700">
+                문장을 입력하세요:
+            </label>
+            <textarea id="sentenceInput" rows="3"
+                      placeholder="예: '태양광 발전은 친환경적이다.'"
+                      class="w-full p-4 border-2 border-blue-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 resize-none shadow-sm"
+            ></textarea>
+
+            <button id="generateButton" onclick="generateQuestion()"
+                    class="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-xl shadow-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-150 ease-in-out transform hover:scale-[1.01] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <span id="buttonText">탐구 질문 생성</span>
+                <svg id="spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </section>
+
+        <!-- 결과 영역 (입력 문장과 생성된 질문을 모두 표시) -->
+        <section id="resultSection" class="mt-8 pt-6 border-t border-gray-200 hidden">
+            
+            <h2 class="text-xl font-bold text-gray-800 mb-3">
+                입력된 문장:
+            </h2>
+            <!-- 입력 문장을 보여주는 작은 창 -->
+            <div id="inputEchoOutput" class="p-3 bg-gray-100 border border-gray-300 rounded-lg text-base text-gray-700 italic mb-4 shadow-inner">
+                <!-- 입력 문장이 여기에 표시됩니다 -->
+            </div>
+
+            <h2 class="text-xl font-bold text-gray-800 mb-3">
+                생성된 탐구 질문 3가지:
+            </h2>
+            <!-- 변경된 부분: 초록색 상자, 그림자, 부드러운 전환 효과 추가 -->
+            <div id="questionOutput" class="p-4 bg-green-50 border border-green-400 rounded-lg text-lg text-gray-900 leading-relaxed shadow-xl transition-opacity duration-500 opacity-0">
+                <!-- 결과 텍스트가 여기에 표시됩니다 -->
+            </div>
+            
+            <div id="sourcesOutput" class="mt-4 text-sm text-gray-500">
+                <!-- 참고 자료가 여기에 표시됩니다 -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 중요한 변수 정의
+        const apiKey = ""; // API 키 (런타임에 자동 제공)
+        const modelName = "gemini-2.5-flash-preview-09-2025";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+        // DOM 요소 가져오기 (요소와 스크립트를 연결)
+        const inputField = document.getElementById('sentenceInput');
+        const generateBtn = document.getElementById('generateButton');
+        const buttonText = document.getElementById('buttonText');
+        const spinner = document.getElementById('spinner');
+        const resultSection = document.getElementById('resultSection');
+        const inputEchoOutput = document.getElementById('inputEchoOutput');
+        const questionOutput = document.getElementById('questionOutput');
+        const sourcesOutput = document.getElementById('sourcesOutput');
+        const messageBox = document.getElementById
